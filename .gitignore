@@ -10,3 +10,6 @@ lib
 pyvenv.cfg
 logsetup.json
 *.log
+streams.json
+images
+xmltv

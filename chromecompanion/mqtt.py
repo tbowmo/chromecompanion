@@ -39,6 +39,9 @@ class MQTT(mqtt.Client):
         self.loop_start()
         while not self.is_connected:
             pass
+
+    def publish(self, topic, payload = None, qos = 0, retain=True):
+        super().publish(topic, payload, qos, retain)
     
     def device(self, message):
         """ return room device is located in """
@@ -58,9 +61,30 @@ class MQTT(mqtt.Client):
         """ Generic topic handler, will copy the topic from chrome2mqtt to our own topic branch """
         room = self.room_message(message)
         msgtype = path.basename(path.normpath(message.topic))
-        self.publish('{0}/{1}/{2}'.format(self.root, room, msgtype), message.payload)
+        payload = message.payload
+        if (msgtype == 'media'):
+            payload = self.media_lookup(message.payload)
+        self.publish('{0}/{1}/{2}'.format(self.root, room, msgtype), payload)
         self.publish('{0}/{1}/device'.format(self.root, room), self.device(message))
         self.active_device[room] = self.device(message)
+
+    def media_lookup(self, media_payload):
+        """ Media lookup, will return a json payload enriched with xmltv info, if available """
+        payload = media_payload
+        try:
+            decoded = json.loads(payload.decode("utf-8"), object_hook=lambda d: Namespace(**d))
+            decoded.type = 0
+            media = self.streamData.get_channel_data(decoded.content_id)
+            if (media is not None):
+                decoded.title = media.desc
+                decoded.artist = media.friendly
+                decoded.album = media.programme
+                decoded.album_art = media.icon
+                decoded.type = 1
+            payload = json.dumps(decoded, default=lambda o: o.__dict__)
+        except:
+            pass
+        return payload
 
     def on_log(self, mqttc, obj, level, buf):
         self.log.debug(buf)

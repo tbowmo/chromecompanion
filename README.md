@@ -27,7 +27,11 @@ Channels are listed in the file streams.json, each channel is described with the
     "link":"http://live-icy.gss.dr.dk/A/A03H.mp3",
     "friendly":"DR P1",
     "type":"audio/mp3",
-    "xmlid":"p1.dr.dk"
+    "xmlid":"p1.dr.dk",
+    "icon": "someicon.png",
 }
 ```
 
+Icons can be served via http(s), or can be hosted elsewhere. Each icon is prefixed with the setting from commandline option `--host`, set it to a place where the icons is stored
+
+see streams-example.json for formatting example

@@ -39,3 +39,21 @@ class xmltv(basehelper):
         if self.program is None:
             return (self.nextStart).isoformat()
         return datetime.strptime(self.program.get('stop'),"%Y%m%d%H%M%S %z").isoformat()
+    
+    def description(self):
+        if self.program is None:
+            return ''
+        try: 
+            return self.program.find('desc').text
+        except:
+            pass
+        return ''
+
+    def category(self):
+        if self.program is None:
+            return ''
+        try:
+            return self.program.find('category').text
+        except:
+            pass
+        return ''

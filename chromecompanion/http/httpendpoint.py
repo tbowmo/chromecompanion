@@ -10,17 +10,20 @@ def medialist(type):
     od = None
     if mediaStore == None:
         return '[]'
-    if type=='audio': 
+    if type=='radio': 
         od = mediaStore.get_channel_list()
     else:
         od = mediaStore.get_channel_list('video/mp4')
-    print(od)
     return json.dumps(od, default=lambda o: o.__dict__)
 
-def runHttpEndpoint(bindAddress='0.0.0.0', port='8181', media: StreamData = None):
+@bottle.get('/channel/<logo>')
+def logo(logo):
+    return bottle.static_file(logo, root='images/')   
+ 
+def runHttpEndpoint(bindAddress='0.0.0.0', port='8181', corsDomain='*', media: StreamData = None):
     global mediaStore
     mediaStore = media
     APP = application = bottle.default_app()
-    application.install(cors())
+    application.install(cors(corsDomain))
     APP.run(host=bindAddress, port=port)
 
