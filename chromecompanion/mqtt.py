@@ -5,10 +5,13 @@ from os import path
 import json
 from types import SimpleNamespace as Namespace
 from chromecompanion.stream import StreamData
+from time import sleep
+import threading
 
 class MQTT(mqtt.Client):
     is_connected = False
     root = ''
+    reloadTimer = None
     def __init__(self, host='127.0.0.1', port=1883, client='chromecompanion', chrome2mqtt='chromecast', root='chromecompanion' , user=None, password=None, media: StreamData = None):
         super().__init__(host, port)
         self.streamData = media
@@ -33,6 +36,7 @@ class MQTT(mqtt.Client):
 
         self.message_callback_add('{0}/+/control/#'.format(self.root), self.control)
         self.subscribe('{0}/+/control/#'.format(root))
+        self.publish('{0}/control/{1}'.format(self.c2mqtt, 'ping'), '')
 
     def conn(self):
         self.connect(self.host, self.port, 30)
@@ -59,11 +63,20 @@ class MQTT(mqtt.Client):
 
     def generic_topic(self, client, userdata, message):
         """ Generic topic handler, will copy the topic from chrome2mqtt to our own topic branch """
+        if self.reloadTimer is not None:
+            self.reloadTimer.cancel()
+            self.reloadTimer = None
         room = self.room_message(message)
         msgtype = path.basename(path.normpath(message.topic))
         payload = message.payload
         if (msgtype == 'media'):
             payload = self.media_lookup(message.payload)
+            decodedPayload = json.loads(payload, object_hook=lambda d: Namespace(**d))
+            # Fake a reload of the media after 60 seconds, in order to refresh XMLtv information
+            if decodedPayload.type == 1:
+                self.reloadTimer = threading.Timer(60, self.generic_topic, args=(client, userdata, message))
+                self.reloadTimer.start()
+
         self.publish('{0}/{1}/{2}'.format(self.root, room, msgtype), payload)
         self.publish('{0}/{1}/device'.format(self.root, room), self.device(message))
         self.active_device[room] = self.device(message)
@@ -121,6 +134,7 @@ class MQTT(mqtt.Client):
             topic = '{0}/{1}_{2}/control/play'.format(self.c2mqtt, device, room)
             if (device != self.active_device):
                 self.publish('{0}/{1}_{2}/control/quit'.format(self.c2mqtt, self.active_device[room], room), '')
+                sleep(0.5)
             self.publish(topic, message.payload)
         except:
             pass
