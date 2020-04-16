@@ -1,5 +1,11 @@
 Chromecast companion
 ===
+
+This is a dead project, the room concept is integrated into chrome2mqtt, and I made nodejs backend fir serving channel / xmltv data to my FrontEnd
+
+
+
+
 *NOTE This is still in early concept state*
 
 Companion program for chrome2mqtt. Arranges chromecasts into rooms, with one status per room. The status is updated from the chromecast that did the latest status update. 
